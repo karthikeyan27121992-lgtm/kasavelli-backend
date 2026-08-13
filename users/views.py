@@ -1,0 +1,142 @@
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from .models import User, Order, Cart, Enquiry
+from .serializers import (
+    UserSerializer, UserRegistrationSerializer,
+    OrderSerializer, CartSerializer, EnquirySerializer
+)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet for User operations"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'login']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UserRegistrationSerializer
+        return UserSerializer
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        """Login with phone number and password"""
+        phone_number = request.data.get('phone_number')
+        password = request.data.get('password')
+        
+        if not phone_number or not password:
+            return Response(
+                {'error': 'Phone number and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user = authenticate(username=phone_number, password=password)
+        
+        if user:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data
+            })
+        
+        return Response(
+            {'error': 'Invalid credentials'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        """Get current user profile"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['put'])
+    def update_profile(self, request):
+        """Update current user profile"""
+        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    """ViewSet for Order operations"""
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return Order.objects.all()
+        return Order.objects.filter(user=user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel an order"""
+        order = self.get_object()
+        if order.status in ['pending', 'processing']:
+            order.status = 'cancelled'
+            order.save()
+            return Response({'message': 'Order cancelled successfully'})
+        return Response(
+            {'error': 'Order cannot be cancelled'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class CartViewSet(viewsets.ModelViewSet):
+    """ViewSet for Cart operations"""
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None  # Return all cart items as a plain array
+    
+    def get_queryset(self):
+        return Cart.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['delete'])
+    def clear(self, request):
+        """Clear all items from cart"""
+        Cart.objects.filter(user=request.user).delete()
+        return Response({'message': 'Cart cleared successfully'})
+    
+    @action(detail=False, methods=['get'])
+    def total(self, request):
+        """Get cart total"""
+        cart_items = Cart.objects.filter(user=request.user)
+        total = sum(
+            item.quantity * (item.product.discounted_price or item.product.price)
+            for item in cart_items
+        )
+        return Response({'total': total, 'items_count': cart_items.count()})
+
+
+class EnquiryViewSet(viewsets.ModelViewSet):
+    """ViewSet for Enquiry operations"""
+    serializer_class = EnquirySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return Enquiry.objects.all()
+        return Enquiry.objects.filter(user=user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+# Made with Bob
