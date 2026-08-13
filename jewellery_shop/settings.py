@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'jewellery_shop.wsgi.application'
 # Database — supports DATABASE_URL (Render/Neon) or individual DB_* vars (local)
 _database_url = config('DATABASE_URL', default='')
 if _database_url:
-    DATABASES = {'default': dj_database_url.parse(_database_url, conn_max_age=600)}
+    DATABASES = {'default': dj_database_url.parse(_database_url, conn_max_age=600, ssl_require=True)}
 else:
     DATABASES = {
         'default': {
