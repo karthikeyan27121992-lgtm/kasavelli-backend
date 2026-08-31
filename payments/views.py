@@ -13,12 +13,10 @@ from users.models import Order, OrderItem, Cart
 class PaymentViewSet(viewsets.ViewSet):
     """ViewSet for Razorpay payment operations"""
     permission_classes = [IsAuthenticated]
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.razorpay_client = razorpay.Client(
-            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
-        )
+
+    @property
+    def razorpay_client(self):
+        return razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
     
     @action(detail=False, methods=['post'])
     def create_order(self, request):
