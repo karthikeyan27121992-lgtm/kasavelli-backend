@@ -2,10 +2,18 @@
 Django settings for jewellery_shop project.
 """
 
+import os
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
 import dj_database_url
+
+# Expose CLOUDINARY_URL to os.environ BEFORE any app is imported.
+# django-cloudinary-storage reads os.environ.get('CLOUDINARY_URL') at module
+# import time (app_settings.py line 13), so this must happen first.
+_cld_url = config('CLOUDINARY_URL', default='')
+if _cld_url:
+    os.environ.setdefault('CLOUDINARY_URL', _cld_url)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,14 +33,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',          # must be before django.contrib.staticfiles
     'django.contrib.staticfiles',
+    'cloudinary',
 
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'cloudinary_storage',
-    'cloudinary',
 
     # Local apps
     'users',
@@ -119,21 +127,17 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files — use Cloudinary in production, local disk in development
-_cloudinary_url = config('CLOUDINARY_URL', default='')
-if _cloudinary_url:
-    # Parse cloudinary://api_key:api_secret@cloud_name
-    _cl_rest = _cloudinary_url.replace('cloudinary://', '')
-    _cl_creds, _cl_cloud = _cl_rest.rsplit('@', 1)
-    _cl_key, _cl_secret = _cl_creds.split(':', 1)
-
-    # django-cloudinary-storage reads from CLOUDINARY_STORAGE dict in settings
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': _cl_cloud,
-        'API_KEY': _cl_key,
-        'API_SECRET': _cl_secret,
+# Media files — use Cloudinary when CLOUDINARY_URL is set, local disk otherwise
+# Django 4.2+ uses STORAGES dict; DEFAULT_FILE_STORAGE is ignored in Django 5.x
+if _cld_url:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        },
     }
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'
 else:
     MEDIA_URL = '/media/'
