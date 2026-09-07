@@ -5,7 +5,8 @@ from .models import Banner
 class BannerSerializer(serializers.ModelSerializer):
     """Serializer for Banner model"""
     product_name = serializers.CharField(source='product.name', read_only=True)
-    
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Banner
         fields = [
@@ -15,5 +16,12 @@ class BannerSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        url = obj.image.url
+        return request.build_absolute_uri(url) if request else url
 
 # Made with Bob
