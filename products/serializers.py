@@ -2,10 +2,22 @@ from rest_framework import serializers
 from .models import Category, Product, ProductReview
 
 
+def _abs_image_url(image_field, request):
+    """Return absolute URL for an ImageField value, or None if empty."""
+    if not image_field:
+        return None
+    try:
+        url = image_field.url
+    except ValueError:
+        return None
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for Category model"""
     products_count = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -14,18 +26,16 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_products_count(self, obj):
         return obj.products.filter(is_active=True).count()
 
-    def get_image(self, obj):
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        url = obj.image.url
-        return request.build_absolute_uri(url) if request else url
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['image'] = _abs_image_url(instance.image, self.context.get('request'))
+        return rep
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
     """Serializer for ProductReview model"""
     user_name = serializers.CharField(source='user.name', read_only=True)
-    
+
     class Meta:
         model = ProductReview
         fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment', 'created_at']
@@ -37,7 +47,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.display_name', read_only=True)
     discount_percentage = serializers.ReadOnlyField()
     final_price = serializers.ReadOnlyField()
-    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -47,12 +56,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             'image', 'in_stock', 'is_featured', 'purity', 'slug'
         ]
 
-    def get_image(self, obj):
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        url = obj.image.url
-        return request.build_absolute_uri(url) if request else url
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['image'] = _abs_image_url(instance.image, self.context.get('request'))
+        return rep
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -62,9 +69,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     final_price = serializers.ReadOnlyField()
     reviews = ProductReviewSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-    image_2 = serializers.SerializerMethodField()
-    image_3 = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -78,21 +82,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
-    def _abs_url(self, field_value):
-        if not field_value:
-            return None
-        request = self.context.get('request')
-        url = field_value.url
-        return request.build_absolute_uri(url) if request else url
-
-    def get_image(self, obj):
-        return self._abs_url(obj.image)
-
-    def get_image_2(self, obj):
-        return self._abs_url(obj.image_2)
-
-    def get_image_3(self, obj):
-        return self._abs_url(obj.image_3)
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        req = self.context.get('request')
+        rep['image'] = _abs_image_url(instance.image, req)
+        rep['image_2'] = _abs_image_url(instance.image_2, req)
+        rep['image_3'] = _abs_image_url(instance.image_3, req)
+        return rep
 
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
@@ -103,7 +99,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating products"""
-    
+
     class Meta:
         model = Product
         fields = [
@@ -113,5 +109,13 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'in_stock', 'stock_quantity', 'weight', 'purity',
             'slug', 'is_featured', 'is_active'
         ]
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        req = self.context.get('request')
+        rep['image'] = _abs_image_url(instance.image, req)
+        rep['image_2'] = _abs_image_url(instance.image_2, req)
+        rep['image_3'] = _abs_image_url(instance.image_3, req)
+        return rep
 
 # Made with Bob

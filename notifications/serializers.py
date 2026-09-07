@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from .models import Banner
+from products.serializers import _abs_image_url
 
 
 class BannerSerializer(serializers.ModelSerializer):
     """Serializer for Banner model"""
     product_name = serializers.CharField(source='product.name', read_only=True)
-    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Banner
@@ -17,11 +17,9 @@ class BannerSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-    def get_image(self, obj):
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        url = obj.image.url
-        return request.build_absolute_uri(url) if request else url
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['image'] = _abs_image_url(instance.image, self.context.get('request'))
+        return rep
 
 # Made with Bob
