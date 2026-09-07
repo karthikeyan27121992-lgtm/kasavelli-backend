@@ -101,13 +101,38 @@ class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None  # Return all cart items as a plain array
-    
+
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
-    
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-    
+
+    def create(self, request, *args, **kwargs):
+        """Upsert — increment quantity if the product is already in the cart."""
+        from products.models import Product
+        product_id = request.data.get('product')
+        try:
+            quantity = max(1, int(request.data.get('quantity', 1)))
+        except (TypeError, ValueError):
+            quantity = 1
+
+        if not product_id:
+            return Response({'error': 'product is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not Product.objects.filter(id=product_id).exists():
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_item, created = Cart.objects.get_or_create(
+            user=request.user,
+            product_id=product_id,
+            defaults={'quantity': quantity}
+        )
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+
+        serializer = self.get_serializer(cart_item, context={'request': request})
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(serializer.data, status=status_code)
+
     @action(detail=False, methods=['delete'])
     def clear(self, request):
         """Clear all items from cart"""

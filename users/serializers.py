@@ -64,12 +64,15 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_product_image(self, obj):
         request = self.context.get('request')
-        if obj.product.image:
-            url = obj.product.image.url
-            if request:
+        if not obj.product.image:
+            return None
+        url = obj.product.image.url
+        if request:
+            try:
                 return request.build_absolute_uri(url)
-            return f"http://localhost:8000{url}"
-        return None
+            except Exception:
+                pass
+        return f"http://localhost:8000{url}"
     
     class Meta:
         model = Cart
