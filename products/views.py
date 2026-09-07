@@ -30,7 +30,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         """Get all products in a category"""
         category = self.get_object()
         products = Product.objects.filter(category=category, is_active=True)
-        serializer = ProductListSerializer(products, many=True)
+        serializer = ProductListSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -62,7 +62,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def featured(self, request):
         """Get featured products"""
         products = Product.objects.filter(is_featured=True, is_active=True)[:10]
-        serializer = ProductListSerializer(products, many=True)
+        serializer = ProductListSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
@@ -77,7 +77,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 description__icontains=query,
                 is_active=True
             )
-            serializer = ProductListSerializer(products.distinct(), many=True)
+            serializer = ProductListSerializer(products.distinct(), many=True, context={'request': request})
             return Response(serializer.data)
         return Response([])
     
@@ -89,7 +89,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             category=product.category,
             is_active=True
         ).exclude(id=product.id)[:6]
-        serializer = ProductListSerializer(related_products, many=True)
+        serializer = ProductListSerializer(related_products, many=True, context={'request': request})
         return Response(serializer.data)
 
 
