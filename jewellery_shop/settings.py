@@ -122,16 +122,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Media files — use Cloudinary in production, local disk in development
 _cloudinary_url = config('CLOUDINARY_URL', default='')
 if _cloudinary_url:
-    # Parse cloudinary://api_key:api_secret@cloud_name into individual params
-    # (cloudinary SDK ignores the cloudinary_url kwarg; must set explicitly)
-    try:
-        _cl_rest = _cloudinary_url.replace('cloudinary://', '')
-        _cl_creds, _cl_cloud = _cl_rest.rsplit('@', 1)
-        _cl_key, _cl_secret = _cl_creds.split(':', 1)
-        import cloudinary
-        cloudinary.config(cloud_name=_cl_cloud, api_key=_cl_key, api_secret=_cl_secret, secure=True)
-    except Exception:
-        pass
+    # Parse cloudinary://api_key:api_secret@cloud_name
+    _cl_rest = _cloudinary_url.replace('cloudinary://', '')
+    _cl_creds, _cl_cloud = _cl_rest.rsplit('@', 1)
+    _cl_key, _cl_secret = _cl_creds.split(':', 1)
+
+    # django-cloudinary-storage reads from CLOUDINARY_STORAGE dict in settings
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _cl_cloud,
+        'API_KEY': _cl_key,
+        'API_SECRET': _cl_secret,
+    }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'
 else:
