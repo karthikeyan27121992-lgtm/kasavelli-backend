@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/products/', include('products.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/payments/', include('payments.urls')),
+    path('api/chat/', include('chat.urls')),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 

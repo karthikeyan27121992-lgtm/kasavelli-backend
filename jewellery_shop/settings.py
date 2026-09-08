@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'products',
     'notifications',
     'payments',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -200,5 +201,8 @@ CORS_ALLOW_CREDENTIALS = True
 # Razorpay Settings
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
+
+# Gemini AI (chatbot)
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # Made with Bob
