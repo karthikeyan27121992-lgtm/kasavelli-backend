@@ -39,7 +39,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'title', 'description']
+    search_fields = ['name', 'title', 'description', 'purity', 'category__display_name', 'category__name']
     ordering_fields = ['price', 'created_at', 'views_count']
     ordering = ['-created_at']
     
