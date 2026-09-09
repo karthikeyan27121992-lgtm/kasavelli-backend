@@ -10,7 +10,9 @@ def _abs_image_url(image_field, request):
         url = image_field.url
     except ValueError:
         return None
-    if request:
+    # Cloudinary URLs are already absolute (https://res.cloudinary.com/…).
+    # Only call build_absolute_uri for relative paths (local dev media files).
+    if request and not url.startswith('http'):
         return request.build_absolute_uri(url)
     return url
 
