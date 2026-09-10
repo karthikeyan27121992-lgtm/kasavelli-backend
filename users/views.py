@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.utils import timezone
+from datetime import timedelta
 from .models import User, Order, Cart, Enquiry
 from .serializers import (
     UserSerializer, UserRegistrationSerializer,
@@ -40,6 +42,13 @@ class UserViewSet(viewsets.ModelViewSet):
         user = authenticate(username=phone_number, password=password)
         
         if user:
+            # Auto-clear an expired spin discount at login time
+            if (user.spin_discount_expires_at and
+                    user.spin_discount_expires_at < timezone.now()):
+                user.spin_discount_pct = 0
+                user.spin_discount_expires_at = None
+                user.save(update_fields=['spin_discount_pct', 'spin_discount_expires_at'])
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -52,6 +61,28 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
+    @action(detail=False, methods=['post'])
+    def save_spin(self, request):
+        """Save spin-wheel result for the authenticated user (24-hour validity)."""
+        pct = request.data.get('percentage', 0)
+        try:
+            pct = int(pct)
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid percentage'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pct < 0 or pct > 100:
+            return Response({'error': 'Percentage must be 0–100'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        user.spin_discount_pct = pct
+        user.spin_discount_expires_at = timezone.now() + timedelta(hours=24) if pct > 0 else None
+        user.save(update_fields=['spin_discount_pct', 'spin_discount_expires_at'])
+
+        return Response({
+            'spin_discount_pct': user.spin_discount_pct,
+            'spin_discount_expires_at': user.spin_discount_expires_at,
+        })
+
     @action(detail=False, methods=['get'])
     def profile(self, request):
         """Get current user profile"""

@@ -50,6 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
+
+    # Spin-wheel discount — set on spin, cleared automatically after 24 h
+    spin_discount_pct = models.PositiveSmallIntegerField(default=0)
+    spin_discount_expires_at = models.DateTimeField(null=True, blank=True)
     
     objects = UserManager()
     
