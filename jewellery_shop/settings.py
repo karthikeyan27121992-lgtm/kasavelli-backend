@@ -205,4 +205,7 @@ RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 # Gemini AI (chatbot)
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
+# CallMeBot WhatsApp notification (owner alert on new orders)
+CALLMEBOT_API_KEY = config('CALLMEBOT_API_KEY', default='')
+
 # Made with Bob

@@ -5,10 +5,55 @@ from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 import razorpay
 import logging
+import urllib.request
+import urllib.parse
+import json as _json
 from .models import Payment
 from users.models import Order, OrderItem, Cart
 
 logger = logging.getLogger(__name__)
+
+OWNER_WHATSAPP = '918072000599'   # country code + number, no +
+
+def _send_whatsapp_notification(order, items):
+    """
+    Send an order notification to the owner via the CallMeBot WhatsApp API.
+    Falls back silently if the request fails — never blocks the response.
+    """
+    api_key = getattr(settings, 'CALLMEBOT_API_KEY', '')
+    if not api_key:
+        logger.warning('CALLMEBOT_API_KEY not set — WhatsApp notification skipped')
+        return
+
+    lines = [
+        f"🛍 *New Order — Kasavelli*",
+        f"Order ID: {order.order_id}",
+        f"Customer: {order.user.name} (+91 {order.user.phone_number})",
+        f"",
+        "*Items Ordered:*",
+    ]
+    for item in items:
+        lines.append(f"• {item.product.name} x{item.quantity} — ₹{item.price * item.quantity}")
+    lines += [
+        f"",
+        f"*Total Paid: ₹{order.total_amount}*",
+        f"Ship to: {order.shipping_address}",
+        f"Contact: {order.phone_number}",
+    ]
+    message = '\n'.join(lines)
+
+    try:
+        params = urllib.parse.urlencode({
+            'phone': OWNER_WHATSAPP,
+            'text': message,
+            'apikey': api_key,
+        })
+        url = f'https://api.callmebot.com/whatsapp.php?{params}'
+        req = urllib.request.Request(url, headers={'User-Agent': 'Kasavelli/1.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            logger.info('WhatsApp notification sent: %s', resp.status)
+    except Exception as exc:
+        logger.error('WhatsApp notification failed: %s', exc)
 
 
 class PaymentViewSet(viewsets.ViewSet):
@@ -23,6 +68,13 @@ class PaymentViewSet(viewsets.ViewSet):
     def create_order(self, request):
         """Create Razorpay order"""
         try:
+            # Guard: Razorpay keys must be configured
+            if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
+                return Response(
+                    {'error': 'Payment gateway not configured. Please contact support.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+
             # Get cart items
             cart_items = Cart.objects.filter(user=request.user)
             if not cart_items.exists():
@@ -31,11 +83,28 @@ class PaymentViewSet(viewsets.ViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Calculate total amount
-            total_amount = sum(
-                item.quantity * (item.product.discounted_price or item.product.price)
+            # Calculate subtotal
+            subtotal = sum(
+                item.quantity * float(item.product.discounted_price or item.product.price)
                 for item in cart_items
             )
+
+            # Apply shipping
+            shipping = 0 if subtotal >= 999 else 99
+
+            # Apply spin-wheel discount if provided and valid
+            spin_pct = int(request.data.get('spin_discount_pct', 0) or 0)
+            spin_pct = max(0, min(spin_pct, 100))
+            # Validate against user's stored spin (prevents tampering)
+            user_spin_pct = request.user.spin_discount_pct or 0
+            from django.utils import timezone as tz
+            user_spin_exp = request.user.spin_discount_expires_at
+            if not (user_spin_pct > 0 and user_spin_exp and user_spin_exp > tz.now()):
+                spin_pct = 0   # expired or not set — ignore frontend value
+            spin_discount = round(subtotal * spin_pct / 100, 2)
+
+            total_amount = round(subtotal + shipping - spin_discount, 2)
+            total_amount = max(total_amount, 1)   # minimum ₹1
 
             # Create Razorpay order (amount in paise)
             razorpay_order = self.razorpay_client.order.create({
@@ -50,7 +119,7 @@ class PaymentViewSet(viewsets.ViewSet):
                 order_id=razorpay_order['id'],
                 total_amount=total_amount,
                 shipping_address=request.data.get('shipping_address', ''),
-                phone_number=request.data.get('phone_number', request.user.phone_number),
+                phone_number=request.data.get('phone_number', request.user.phone_number) or request.user.phone_number,
                 status='pending'
             )
 
@@ -117,6 +186,10 @@ class PaymentViewSet(viewsets.ViewSet):
 
             # Clear cart
             Cart.objects.filter(user=request.user).delete()
+
+            # Send WhatsApp notification to owner (non-blocking)
+            order_items = list(order.items.select_related('product').all())
+            _send_whatsapp_notification(order, order_items)
 
             return Response({
                 'message': 'Payment verified successfully',
