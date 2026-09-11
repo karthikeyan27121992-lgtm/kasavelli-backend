@@ -192,6 +192,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
     "https://kasavelli-frontend.karthikeyan27121992.workers.dev",
+    "https://kasavelli925.com",
+    "https://www.kasavelli925.com",
 ]
 if _frontend_url:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
