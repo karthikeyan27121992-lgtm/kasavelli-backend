@@ -105,7 +105,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user = request.user
         user.spin_discount_pct = pct
-        user.spin_discount_expires_at = timezone.now() + timedelta(hours=24) if pct > 0 else None
+        # Always set 24h expiry regardless of percentage —
+        # pct=0 (Better Luck) blocks the wheel from re-showing for 24h too.
+        user.spin_discount_expires_at = timezone.now() + timedelta(hours=24)
         user.save(update_fields=['spin_discount_pct', 'spin_discount_expires_at'])
 
         return Response({
