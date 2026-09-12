@@ -38,6 +38,7 @@ class LeadspaceBannerSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'eyebrow', 'title', 'desc_line1', 'desc_line2',
             'offer_pct', 'offer_label', 'button_text', 'button_link',
+            'trust_tag1', 'trust_tag2', 'trust_tag3',
             'image', 'image_url', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

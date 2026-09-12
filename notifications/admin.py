@@ -24,6 +24,13 @@ class LeadspaceBannerAdmin(admin.ModelAdmin):
     list_filter = ['is_active']
     search_fields = ['title', 'eyebrow', 'desc_line1']
     list_editable = ['is_active']
+    fieldsets = [
+        ('Content', {'fields': ['eyebrow', 'title', 'desc_line1', 'desc_line2']}),
+        ('Call to Action', {'fields': ['button_text', 'button_link', 'offer_pct', 'offer_label']}),
+        ('Trust Tags (shown below CTA button)', {'fields': ['trust_tag1', 'trust_tag2', 'trust_tag3']}),
+        ('Image', {'fields': ['image', 'image_url']}),
+        ('Settings', {'fields': ['is_active']}),
+    ]
 
 
 @admin.register(StorySection)
