@@ -18,7 +18,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     
     def get_permissions(self):
-        if self.action in ['create', 'login']:
+        if self.action in ['create', 'login', 'reset_password']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
     
@@ -61,6 +61,36 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def reset_password(self, request):
+        """Reset password by verifying phone number"""
+        phone_number = request.data.get('phone_number')
+        new_password = request.data.get('new_password')
+
+        if not phone_number or not new_password:
+            return Response(
+                {'error': 'Phone number and new password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 6:
+            return Response(
+                {'error': 'Password must be at least 6 characters'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(phone_number=phone_number)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'No account found with this phone number'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        return Response({'message': 'Password reset successfully'})
+
     @action(detail=False, methods=['post'])
     def save_spin(self, request):
         """Save spin-wheel result for the authenticated user (24-hour validity)."""
