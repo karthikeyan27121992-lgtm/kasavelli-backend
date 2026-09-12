@@ -142,3 +142,24 @@ class WhyChooseCard(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class SpinWheelSlice(models.Model):
+    """Configuration model for dynamic spin-wheel slices"""
+    label = models.CharField(max_length=100, help_text="e.g. 10% OFF, Better Luck!")
+    percentage = models.PositiveIntegerField(default=0, help_text="Discount percentage (0 for Better Luck / no discount)")
+    color = models.CharField(max_length=50, default="#551756", help_text="Slice background color hex code")
+    text_color = models.CharField(max_length=50, default="#e8c547", help_text="Slice text color hex code")
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'spin_wheel_slices'
+        ordering = ['display_order', 'id']
+        verbose_name = 'Spin Wheel Slice'
+        verbose_name_plural = 'Spin Wheel Slices'
+
+    def __str__(self):
+        return f"{self.label} ({self.percentage}%)"

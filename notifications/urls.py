@@ -6,6 +6,7 @@ from .views import (
     LeadspaceBannerViewSet,
     StorySectionViewSet,
     WhyChooseCardViewSet,
+    SpinWheelSliceViewSet,
     HomepageConfigViewSet,
 )
 
@@ -15,6 +16,7 @@ router.register(r'notification-bars', NotificationBarViewSet, basename='notifica
 router.register(r'leadspace-banners', LeadspaceBannerViewSet, basename='leadspace-banner')
 router.register(r'story-sections', StorySectionViewSet, basename='story-section')
 router.register(r'why-choose-cards', WhyChooseCardViewSet, basename='why-choose-card')
+router.register(r'spin-wheel-slices', SpinWheelSliceViewSet, basename='spin-wheel-slice')
 router.register(r'homepage-config', HomepageConfigViewSet, basename='homepage-config')
 
 urlpatterns = [

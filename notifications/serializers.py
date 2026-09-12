@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard
+from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard, SpinWheelSlice
 from products.serializers import _abs_image_url
 
 
@@ -87,9 +87,21 @@ class WhyChooseCardSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
+class SpinWheelSliceSerializer(serializers.ModelSerializer):
+    """Serializer for SpinWheelSlice model"""
+    class Meta:
+        model = SpinWheelSlice
+        fields = [
+            'id', 'label', 'percentage', 'color', 'text_color',
+            'display_order', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
 class HomepageConfigSerializer(serializers.Serializer):
     """Consolidated homepage config serializer for single-fetch frontend efficiency"""
     notifications = NotificationBarSerializer(many=True)
     leadspace = LeadspaceBannerSerializer(allow_null=True)
     story = StorySectionSerializer(allow_null=True)
     why_choose_cards = WhyChooseCardSerializer(many=True)
+    spin_wheel_slices = SpinWheelSliceSerializer(many=True)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard
+from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard, SpinWheelSlice
 
 
 @admin.register(Banner)
@@ -39,4 +39,12 @@ class WhyChooseCardAdmin(admin.ModelAdmin):
     list_display = ['title', 'icon_type', 'display_order', 'is_active']
     list_filter = ['is_active', 'icon_type']
     search_fields = ['title', 'description']
+    list_editable = ['display_order', 'is_active']
+
+
+@admin.register(SpinWheelSlice)
+class SpinWheelSliceAdmin(admin.ModelAdmin):
+    list_display = ['label', 'percentage', 'color', 'text_color', 'display_order', 'is_active']
+    list_filter = ['is_active', 'percentage']
+    search_fields = ['label']
     list_editable = ['display_order', 'is_active']

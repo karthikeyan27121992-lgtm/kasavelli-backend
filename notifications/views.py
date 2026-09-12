@@ -3,11 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import models
-from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard
+from .models import Banner, NotificationBar, LeadspaceBanner, StorySection, WhyChooseCard, SpinWheelSlice
 from .serializers import (
      BannerSerializer, NotificationBarSerializer,
      LeadspaceBannerSerializer, StorySectionSerializer,
-     WhyChooseCardSerializer, HomepageConfigSerializer
+     WhyChooseCardSerializer, SpinWheelSliceSerializer, HomepageConfigSerializer
  )
 from products.views import IsAdminOrReadOnly
 
@@ -83,6 +83,18 @@ class WhyChooseCardViewSet(viewsets.ModelViewSet):
         return WhyChooseCard.objects.filter(is_active=True).order_by('display_order', 'id')
 
 
+class SpinWheelSliceViewSet(viewsets.ModelViewSet):
+    """ViewSet for Spin Wheel slices"""
+    serializer_class = SpinWheelSliceSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+    def get_queryset(self):
+        if self.request.user and self.request.user.is_authenticated and getattr(self.request.user, 'role', '') == 'admin':
+            return SpinWheelSlice.objects.all().order_by('display_order', 'id')
+        return SpinWheelSlice.objects.filter(is_active=True).order_by('display_order', 'id')
+
+
 class HomepageConfigViewSet(viewsets.ViewSet):
     """Aggregated endpoint to fetch active homepage sections in 1 API call"""
     permission_classes = [permissions.AllowAny]
@@ -92,12 +104,14 @@ class HomepageConfigViewSet(viewsets.ViewSet):
         leadspace = LeadspaceBanner.objects.filter(is_active=True).order_by('-created_at').first()
         story = StorySection.objects.filter(is_active=True).order_by('-created_at').first()
         why_choose_cards = WhyChooseCard.objects.filter(is_active=True).order_by('display_order', 'id')
+        spin_wheel_slices = SpinWheelSlice.objects.filter(is_active=True).order_by('display_order', 'id')
 
         serializer = HomepageConfigSerializer({
             'notifications': notifications,
             'leadspace': leadspace,
             'story': story,
             'why_choose_cards': why_choose_cards,
+            'spin_wheel_slices': spin_wheel_slices,
         }, context={'request': request})
         
         return Response(serializer.data)
