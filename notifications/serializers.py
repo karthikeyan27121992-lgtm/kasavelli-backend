@@ -27,7 +27,7 @@ class NotificationBarSerializer(serializers.ModelSerializer):
     """Serializer for NotificationBar model"""
     class Meta:
         model = NotificationBar
-        fields = ['id', 'text', 'is_active', 'display_order', 'created_at', 'updated_at']
+        fields = ['id', 'text', 'icon_type', 'is_active', 'display_order', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 

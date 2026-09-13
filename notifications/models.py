@@ -34,7 +34,25 @@ class Banner(models.Model):
 
 class NotificationBar(models.Model):
     """Top notification ticker bar content"""
+
+    ICON_CHOICES = [
+        ('truck',     '🚚 Truck / Delivery'),
+        ('speaker',   '📢 Speaker / Announcement'),
+        ('tag',       '🏷️ Tag / Offer'),
+        ('shield',    '🛡️ Shield / Certified'),
+        ('gift',      '🎁 Gift / Packaging'),
+        ('star',      '⭐ Star / Featured'),
+        ('heart',     '❤️ Heart / Handpicked'),
+        ('sparkles',  '✨ Sparkles / Made in India'),
+        ('returns',   '🔄 Returns / Exchange'),
+        ('none',      '— No Icon'),
+    ]
+
     text = models.TextField(help_text='Notification announcement text')
+    icon_type = models.CharField(
+        max_length=20, choices=ICON_CHOICES, default='truck',
+        help_text='Icon shown before the notification text'
+    )
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

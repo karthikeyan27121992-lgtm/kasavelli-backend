@@ -12,8 +12,8 @@ class BannerAdmin(admin.ModelAdmin):
 
 @admin.register(NotificationBar)
 class NotificationBarAdmin(admin.ModelAdmin):
-    list_display = ['id', 'text', 'is_active', 'display_order', 'created_at']
-    list_filter = ['is_active']
+    list_display = ['id', 'text', 'icon_type', 'is_active', 'display_order', 'created_at']
+    list_filter = ['is_active', 'icon_type']
     search_fields = ['text']
     list_editable = ['is_active', 'display_order']
 
