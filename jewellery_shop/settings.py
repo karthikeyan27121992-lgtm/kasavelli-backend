@@ -203,11 +203,19 @@ CORS_ALLOW_CREDENTIALS = True
 # Razorpay Settings
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
+# Webhook secret — set in Razorpay Dashboard → Settings → Webhooks → Secret
+RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 
 # Gemini AI (chatbot)
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # CallMeBot WhatsApp notification (owner alert on new orders)
 CALLMEBOT_API_KEY = config('CALLMEBOT_API_KEY', default='')
+
+# Fast2SMS — staff SMS alerts on new/failed orders
+# Get free API key at: https://www.fast2sms.com → Developer → API
+FAST2SMS_API_KEY = config('FAST2SMS_API_KEY', default='')
+# Comma-separated 10-digit Indian mobile numbers (no +91 needed)
+STAFF_PHONE_NUMBERS = config('STAFF_PHONE_NUMBERS', default='')
 
 # Made with Bob
