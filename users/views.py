@@ -135,7 +135,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     """ViewSet for Order operations"""
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+    pagination_class = None  # return all user orders as a plain array
+
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
