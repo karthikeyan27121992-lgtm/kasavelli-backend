@@ -5,14 +5,14 @@ from .models import User, Order, OrderItem, Cart, Enquiry
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
-    
+
     class Meta:
         model = User
         fields = [
             'id', 'phone_number', 'name', 'email', 'role', 'date_joined',
             'spin_discount_pct', 'spin_discount_expires_at',
         ]
-        read_only_fields = ['id', 'date_joined']
+        read_only_fields = ['id', 'date_joined', 'role', 'phone_number']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
