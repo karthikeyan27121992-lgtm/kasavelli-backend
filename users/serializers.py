@@ -28,7 +28,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             phone_number=validated_data['phone_number'],
             name=validated_data['name'],
             email=validated_data.get('email', ''),
-            password=validated_data['password']
+            password=validated_data['password'],
+            role='user'   # always register as regular user
         )
 
 

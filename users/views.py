@@ -139,7 +139,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        # Only the actual Django staff/superuser or role=admin sees all orders
+        if getattr(user, 'role', None) == 'admin' and getattr(user, 'is_staff', False):
             return Order.objects.all()
         return Order.objects.filter(user=user)
     
